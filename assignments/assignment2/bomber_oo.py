@@ -1,3 +1,9 @@
+# Version 6.5.0 
+# Date: Monday 19th October @ 18:32:10
+# Made by Mark Handley, fixed and corrected by Dinesh (UCL)
+# Added a few features but nothing majorly massive
+# Bug report also included in directory
+
 from tkinter import *
 from tkinter import font
 from math import sqrt
