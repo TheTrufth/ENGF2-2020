@@ -413,7 +413,7 @@ Fields:
 
 The contents of a GHOST_UPDATE message are:
 - Type: GHOST_UPDATE
-- Priority: This value MAY be 0 or 1. see 1.2.1
+- Priority: This value MUST be 1. see 1.2.1
 - Quadrant Number: Ranges from 0 - 3. see 1.3
 - GhostNum:  A integer in the range 0-3 see 1.7.1
 - X-Position: A hexadecimal from 0-2A see 1.5
@@ -464,7 +464,7 @@ Fields:
 
 The contents of a EAT message are:
 - Type: EAT
-- Priority: This value MAY be 0 or 1. see 1.2.1
+- Priority: This value MUST be 0. see 1.2.1
 - Quadrant Number: Ranges from 0 - 3. see 1.3
 - X-Position: A hexadecimal from 0-2A see 1.5
 - Y-Position: A hexadecimal from 0-F see 1.5
@@ -487,7 +487,7 @@ Fields:
 
 The contents of a SCORE_UPDATE message are:
 - Type: SCORE_UPDATE
-- Priority: This value MAY be 0 or 1. see 1.2.1
+- Priority: This value MUST be 1. see 1.2.1
 - Score: Decimal value. Represents the current score of the local player
 
 LIVES_UPDATE
@@ -506,7 +506,7 @@ Fields:
 
 The contents of a LIVES_UPDATE message are:
 - Type: LIVES_UPDATE
-- Priority: This value MAY be 0 or 1. see 1.2.1
+- Priority: This value MUST be 0. see 1.2.1
 - Lives: Decimal value in range 0-4. Represents the number of lives of the local player
 
 STATUS_UPDATE
@@ -524,7 +524,7 @@ Fields:
     - Status: 3 bit binary value
 The contents of a STATUS_UPDATE message are:
 - Type: STATUS_UPDATE
-- Priority: This value MAY be 0 or 1. see 1.2.1
+- Priority: This value MUST be 0. see 1.2.1
 - Status: There are 5 status'. They will be represented in decimal and will have binary encoding.
 
      Status        |  Decimal Value |   Binary Value
@@ -543,7 +543,6 @@ While the Pacman is moving, the message types relating to the maze and the pacma
 should be sent every 20ms. If the computer cannot maintain 50 frames per second, the messages
 MAY be sent once per frame.
 
-B
 
 
 
