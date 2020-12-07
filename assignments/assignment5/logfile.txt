@@ -1,0 +1,6 @@
+listening for incoming connection...
+Got connection from ('172.20.10.4', 64358)
+receive_passwd, fd= 5
+fd  5 received passwd  123
+Error:  5 got a message from a waiting sock!
+Got connection from ('172.20.10.4', 64451)
