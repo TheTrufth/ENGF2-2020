@@ -3,6 +3,31 @@ Pacman v1 Protocol Specification
 
 *giving unsigned integer
 
+Table of Contents
+=================
+
+1. Terminology
+  1.1 Priority level
+    1.1.1 Determining a messages priority level
+    1.1.2 Priority level 0
+    1.1.3 Priority level 1
+  1.2 Quadrants
+  1.3 Map items
+    1.3.1 Runs (optional)
+  1.4 Positions/coordinate system
+  1.5 Direction system
+  1.6 Speed system
+  1.7 Ghosts
+    1.7.1 Ghosts Number
+    1.7.2 Ghost Modes
+2.0 Sending the Maze during first connection
+3.0 Message encoding and contents
+4.0 Message Timing
+5.0 ABNF Form
+
+
+
+
 1. Terminology
 ===============
 
@@ -284,8 +309,8 @@ make sure there is no packet loss. Only after it recieves the every quadrant,
 the game will begin.
 
 
-Message Encoding and Contents
-=============================
+3.0 Message Encoding and Contents
+=================================
 
 NOTE: Sequence numbers haven't been included this part of the encoding.
       See 1.1.2 and 1.1.3 for their encoding.
@@ -536,8 +561,8 @@ The contents of a STATUS_UPDATE message are:
   READY_TO_RESTART |       5        |       101
 
 
-Message Timing
-===============
+4.0 Message Timing
+==================
 
 While the Pacman is moving, the message types relating to the maze and the pacman
 should be sent every 20ms. If the computer cannot maintain 50 frames per second, the messages
