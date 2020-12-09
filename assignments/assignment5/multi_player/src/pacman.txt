@@ -691,7 +691,7 @@ the messages MAY be sent once per frame. Messages initiating a connection
 SHOULD be sent at the start and MUST be sent every 5ms until a connection 
 is successful.
 
-Messages relating to score are only sent if a EAT message is sent.
+SCORE_UPDATE messages are only sent if a EAT message is sent.
 LIVES_UPDATE message is only sent when FOREIGN_PACMAN_DIED is sent.
 
 
