@@ -1,5 +1,7 @@
-Pacman v1 Protocol Specification
+Pacman Protocol Specification
 =================================
+
+STUDENT NUMBER: 20097809
 
 Table of Contents
 =================
