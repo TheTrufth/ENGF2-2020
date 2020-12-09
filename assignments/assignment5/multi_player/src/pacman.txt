@@ -20,10 +20,13 @@ Table of Contents
   1.7 Ghosts
     1.7.1 Ghosts Number
     1.7.2 Ghost Modes
-2.0 Sending the Maze during first connection
-3.0 Message encoding and contents
-4.0 Message Timing
-5.0 ABNF Form
+2.0 Initiating a connection
+  2.1 Client server mode
+  2.2 Relay server
+3.0 Sending the Maze during first connection
+4.0 Message encoding and contents
+5.0 Message Timing
+6.0 ABNF Grammar
 
 
 
@@ -31,11 +34,14 @@ Table of Contents
 1. Terminology
 ===============
 
+
 This specification uses the terms MUST, SHOULD and MAY as defined in 
 RFC 2119 [rfc2119]
 
-The pacman v1 protocol runs over both UDP and TCP, using a well known ports of 5432 and 5433 respectively.
-There are 12 message types: INIT
+The pacman v1 protocol runs over both UDP and TCP, using a well known 
+ports of 5432 and 5433 respectively.
+
+There are 14 message types: INITIALISE
                             FOREIGN_PACMAN_ARRIVED
                             FOREIGN_PACMAN_LEFT
                             FOREIGN_PACMAN_DIED
@@ -47,6 +53,8 @@ There are 12 message types: INIT
                             SCORE_UPDATE
                             LIVES_UPDATE
                             STATUS_UPDATE
+                            CONNECT_AS_CLIENT
+                            CONNECT_AS_SERVER
 
 There are 4 message priority levels: 0, 1
 
@@ -61,16 +69,17 @@ There are 4 directions
 ===================
 
 Each message type MUST have a priority level attached to it
-which ranges from 0-1 where 0 signifies a very important high priority change and 
-1 is a low priority change. If the message has a priority level of 0, it
-MUST be sent over TCP else it SHOULD be sent over UDP. It MUST continue to send
-the high priority messages until it has been correctly received by the other side.
+which ranges from 0-1 where 0 signifies a very important high priority
+change and 1 is a low priority change. If the message has a priority 
+level of 0, it MUST be sent over TCP else it SHOULD be sent over UDP. 
+It MUST continue to send the high priority messages until it has been 
+correctly received by the other side.
 
   1.1.1 Determining a messages priority level
   ===========================================
 
-  In order to determine a messages priority level, there are conditions that
-  must be met. These are outlined below:
+  In order to determine a messages priority level, there are conditions 
+  that must be met. These are outlined below:
 
   Priority level :         Condition            :   Protocol used
         0        : This message MUST be sent    :       TCP
@@ -82,9 +91,10 @@ the high priority messages until it has been correctly received by the other sid
   1.1.2 Priority level 0
   ======================
 
-  If a message has a priority level 0, there will be a sequence number attached to its header.
-  If there are any priority level 0 messages that havent been received correctly, then the 
-  sequence number is incremented from the last priority level 0 message.
+  If a message has a priority level 0, there will be a sequence number 
+  attached to its header. If there are any priority level 0 messages 
+  that havent been received correctly, then the sequence number is 
+  incremented from the last priority level 0 message.
 
   Sequence numbers begin from the decimal number 1
   They are encoded in 3 bit binary.
@@ -103,23 +113,24 @@ the high priority messages until it has been correctly received by the other sid
   1.1.3 Priority level 1
   ======================
 
-  If a message has a priority level 1. There will be a sequenece number attached to its header.
-  The sequenece number will be the last priority level 0 messages sequence number and will
-  increment until the priority level 0 message has been sent. 
+  If a message has a priority level 1. There will be a sequenece number 
+  attached to its header. The sequenece number will be the last priority 
+  level 0 messages sequence number and will increment until the priority 
+  level 0 message has been sent. 
 
+  For example, if we are sending a priority level 1 message and the last 
+  priority level 0 message had a sequence number of 1, the sequence number 
+  of the priority level 1 message will be 1.
 
+  A priority level 1 message will not be processed until a priority level 
+  0 message before it has been processed. Since priority level 0 messages 
+  SHOULD arrive on time, there SHOULD be no delays.
 
-  For example, if we are sending a priority level 1 message and the last priority level 0 message
-  had a sequence number of 1, the sequence number of the priority level 1 message will be 1.
-
-  A priority level 1 message will not be processed until a priority level 0 message before it 
-  has been processed. Since priority level 0 messages SHOULD arrive on time, there SHOULD be no delays.
-
-  If there are no priority level 0 messages that haven't been recieved correctly, then this value
-  will be 0.
+  If there are no priority level 0 messages that haven't been recieved 
+  correctly, then this value will be 0.
 
   Sequence numbers begin from the decimal number 1
-  They are encoded in 3 bit binary.
+  They are encoded in 2 bit binary.
 
                    0 1 2 ..........   
                   +-+-+-+-+-+-+-+-+
@@ -146,17 +157,18 @@ ____________________
 |   2    |    3    |
 |________|_________|
 
-All message types relating to the maze MUST have a quandrant number associated to it.
-During initial connection, all 4 quadrants MUST be sent using TCP protocol.
-When a computer is controlling their respective pacman, it MUST 
-continuously send a sequenece of messages that are taking place in that 
-quandrant of the maze. It SHOULD also send messages if a change took place
-in any other quandrant such as ghost has changed direction. 
+All message types relating to the maze MUST have a quandrant number 
+associated to it. During initial connection, all 4 quadrants MUST 
+be sent using TCP protocol. When a computer is controlling their 
+respective pacman, it MUST continuously send a sequenece of messages 
+that are taking place in that quandrant of the maze. It SHOULD also 
+send messages if a change took place in any other quandrant such as 
+ghost has changed direction. 
 
-Note that whenever we send update message from a quadrant, the other side SHOULD
-be able to use the messages and build the full correct maze.
-In addition, the number of quandrants sent is not limited, it SHOULD be able to send 
-multiple quandrants if needed.
+Note that whenever we send update message from a quadrant, the other 
+side SHOULD be able to use the messages and build the full correct maze.
+In addition, the number of quandrants sent is not limited, it SHOULD 
+be able to send multiple quandrants if needed.
 
 
 1.3 Map items 
@@ -182,10 +194,13 @@ Each map item has a decimal value as follows:
   1.3.1 Runs (optional)
   =========================
 
-  This value is the number of 'runs' of a repeated map item. Similar to Run length encoding (RLE)
-  This value will be encoded in binary in 5 bits
-  Example: If the map item "---" occurs 5 times consecutively, the binary encoding will be 00101
-  The range of this value is from 1-31 (the max length of a quadrant)
+  This value is the number of 'runs' of a repeated map item. Similar 
+  to Run length encoding (RLE). This value will be encoded in binary 
+  in 5 bits
+
+  Example: If the map item "---" occurs 5 times consecutively, 
+  the binary encoding will be 00101. The range of this value is from 
+  1-31 (the max length of a quadrant)
 
 1.4 Positions/coordinate system
 ===============================
@@ -245,19 +260,26 @@ Stationary :    0    :       0        :    0000
 
 1.7.1 Ghosts Number
 ===================
-A integer in the range 0-3. There are two sets of ghosts. One set belongs to the local computer 
-and the other belongs to the remote computer. Each computer controls their respective ghost from their set. For example, 
-the local computer cannot control a ghost that was created by the remote computer vice versa. This field is for indicating 
-which ghost that exists on the local machine the message refers to on the remote computer.
+
+A integer in the range 0-3. There are two sets of ghosts. One set 
+belongs to the local computer and the other belongs to the remote 
+computer. Each computer controls their respective ghost from their 
+set. For example, the local computer cannot control a ghost that was 
+created by the remote computer vice versa. This field is for indicating 
+which ghost that exists on the local machine the message refers to on 
+the remote computer.
 
 1.7.2 Ghost Modes
 =================
-Ranges from 0-2. There are 3 modes that a ghost can exist in.
-They are:
 
-Eyes - Only the ghosts eyes will be shown, they will go to their base to come out of eyes mode and will go back to chase mode.
-Frighten - The ghost will turn white and move away from the pacman.
-Chase - The ghost will be original color and they will move towards the pacman.
+Ranges from 0-2. There are 3 modes that a ghost can exist in.
+
+They are:
+  Eyes - Only the ghosts eyes will be shown, they will go to their 
+         base to come out of eyes mode and will go back to chase mode.
+  Frighten - The ghost will turn white and move away from the pacman.
+  Chase - The ghost will be original color and they will move towards 
+          the pacman.
 
 The ghost modes will be encoded as such:
 
@@ -267,16 +289,99 @@ The ghost modes will be encoded as such:
      Chase    :      2        :    0010
 
 
+2.0 Initiating a connection
+===========================
 
-2.0 Sending the Maze during first connection
-============================================
+There are 2 ways of playing pacman.
+One way is client server mode, where one players computer acts as a 
+server and the other as a client. The other way consists of a relay 
+server. Each computer/machine connects to a server where the server
+acts as a relay between the two computers. Only one method can be 
+used at a time.
+
+  2.1 Client server mode
+  ======================
+
+  The server must run first, and then the client connects to the 
+  server. 
+  To run the server:
+  "python3 pacman.py -r -s -p <passwd>"
+
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |  Type  | Priority |      passwd     |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+  Fields:
+    Type: 4 bit type field. Type=CONNECT_AS_SERVER has decimal value 12 
+          giving unsigned integer
+    Priority: MUST be 0. This priority level ensures that the message 
+          will be delivered reliably. see 1.1.1
+    passwd = a 7 bit ascii encoded string
+
+  The server MUST display its ip address on the screen.
+
+  In order for the second computer to connect:
+  "python3 pacman.py -r -c <ip_address> -p <passwd>"
+
+   
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+  |  Type  | Priority |  ip_address | passwd |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
+
+  Fields:
+    Type: 4 bit type field. Type=CONNECT_AS_CLIENT has decimal value 13
+          giving unsigned integer
+    Priority: MUST be 0. This priority level ensures that the message 
+          will be delivered reliably. see 1.1.1
+    ip_address = the ip address of the server encoded in 4 bytes (32 bits)
+    passwd = 7 bit ascii encoded string
+
+  2.2 Relay server
+  ================
+
+  In order to run the relay server:
+  "python3 pacman_server.py -p <passwd>"
+
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |  Type  | Priority |      passwd     |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+  Fields:
+    Type: 4 bit type field. Type=CONNECT_AS_SERVER has decimal value 12 
+          giving unsigned integer
+    Priority: MUST be 0. This priority level ensures that the message will 
+              be delivered reliably. see 1.1.1
+    passwd = a 7 bit ascii encoded string
+
+  The server MUST display its ip address on the screen.
+
+  Once the relay sever is running, both computers can connect by:
+  "python3 pacman.py -r -c <ip_address> -p <passwd>
+
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+  |  Type  | Priority |  ip_address | passwd |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
+  Fields:
+    Type: 4 bit type field. Type=CONNECT_AS_CLIENT has decimal value 13 
+          giving unsigned integer
+    Priority: MUST be 0. This priority level ensures that the message will 
+          be delivered reliably. see 1.1.1
+    ip_address = the ip address of the server encoded in 4 bytes (32 bits)
+    passwd = 7 bit ascii encoded string
+
+3.0 Sending the Maze during first successful connection
+=======================================================
 
 A maze needs to be of size 81 x 34 in order to be imported.
 
-Once a successful connection between each computer has been established, a random computers
-maze is chosen. That maze is split up into 4 quadrants as specified in 1.2.
+Once a successful connection between each computer has been 
+established, a random computers maze is chosen. That maze is split up
+into 4 quadrants as specified in 1.2.
 
-The starting x and y position of the map item is also sent using the position system in 1.4.
+The starting x and y position of the map item is also sent using the
+position system in 1.4.
 
 INITIALIZSE messages consist of 26 bits, encoded as follows:
 
@@ -288,28 +393,32 @@ INITIALIZSE messages consist of 26 bits, encoded as follows:
 Fields:
     - Type: 4 bit type field. Type=INITIALISE has decimal value 0
     - Priority: Priority Type 1 bit unsigned integer
-    - Quadrant Number: 2 bit binary value.
-    - Map item: 4 bit binary value
-    - Runs: 5 bit binary value
+    - Quadrant Number: 2 bit binary value unsigned integer
+    - Map item: 4 bit binary value unsigned integer
+    - Runs: 5 bit binary value unsigned integer
     - X-Position: 6 bit binary value (converted from hex)
     - Y-Postion: 4 bit binary value (converted from hex)
     
 
 The contents of the initialise message are:
 - Type: INITIALISE
-- Priority level: 0. This priority level ensures that the message will be delievered reliably. see 1.1.1
+- Priority level: 0. This priority level ensures that the message will be
+                  delievered reliably. see 1.1.1
 - Quadrant Number: Integer in range 0 to 3 where 0 is the top left.
 - Map Item: Decimal value indicating which map item. see 1.3
-- Runs: Decimal value indicating how much of the map item it should add on that line. see 1.3.1
-- X-Position: Contains the items x position value in hexadecimal. It is of the format 0x(__)
-- Y-Position: Contains the itmes y position value in hexadecimal. It is of the format 0x(_)
+- Runs: Decimal value indicating how much of the map item it should add on 
+        that line. see 1.3.1
+- X-Position: Contains the items x position value in hexadecimal. 
+              It is of the format 0x(__)
+- Y-Position: Contains the itmes y position value in hexadecimal. 
+              It is of the format 0x(_)
 
 This message MUST be sent using TCP protocol as it is reliable and it will
 make sure there is no packet loss. Only after it recieves the every quadrant,
 the game will begin.
 
 
-3.0 Message Encoding and Contents
+4.0 Message Encoding and Contents
 =================================
 
 NOTE: Sequence numbers haven't been included this part of the encoding.
@@ -332,11 +441,12 @@ Fields:
 The contents of a FOREIGN_PACMAN_ARRIVED message are:
 - Type: FOREIGN_PACMAN_ARRIVED
 - Priority: This value MUST be 0. see 1.1.1
-Note: This message acts as a notification and notifies if a foreign pacman has arrived on
-the local computer.
+Note: This message acts as a notification and notifies if a foreign pacman 
+      has arrived on the local computer.
 
 FOREIGN_PACMAN_LEFT
 -------------------
+
 FOREIGN_PACMAN_LEFT messages consist of 5 bits, encoded as follows:
 
  0 1 2 3  |     4     |
@@ -350,11 +460,14 @@ Fields:
 
 The contents of a FOREIGN_PACMAN_LEFT message are:
 - Type: FOREIGN_PACMAN_LEFT
-- Priority: MUST be 0. This priority level ensures that the message will be delivered reliably. see 1.1.1
-Note: This message acts as a notification and is sent after a game is completed successfully
+- Priority: MUST be 0. This priority level ensures that the message will 
+            be delivered reliably. see 1.1.1
+Note: This message acts as a notification and is sent after a game is 
+      completed successfully
 
 FOREIGN_PACMAN_DIED
 -------------------
+
 FOREIGN_PACMAN_DIED messages consist of 5 bits, encoded as follows:
 
  0 1 2 3 |     4    |
@@ -369,10 +482,12 @@ Fields:
 The contents of a FOREIGN_PACMAN_DIED message are:
 - Type: FOREIGN_PACMAN_DIED
 - Priority: This value MUST be 0. see 1.1.1
-Note: This message acts a notification and notifies the local machine if a foreign pacman has died.
+Note: This message acts a notification and notifies the local machine 
+      if a foreign pacman has died.
 
 PACMAN_GO_HOME
 --------------
+
 PACMAN_GO_HOME messages consist of 5 bits, encoded as follows:
 
  0 1 2 3 |     4    |
@@ -391,6 +506,7 @@ The contents of a PACMAN_GO_HOME message are:
 
 PACMAN_UPDATE
 -------------
+
 PACMAN_UPDATE messages consist of 20 bits, encoded as follows:
 
  0 1 2 3  |    4     |    5      6     | 7 8 9 10 11 12 | 13 14 15 16 |   17  18  |   19  |
@@ -418,6 +534,7 @@ The contents of a PACMAN_UPDATE message are:
 
 GHOST_UPDATE
 ------------
+
 GHOST_UPDATE messages consist of 25 bits, encoded as follows:
 
  0 1 2 3 |    4    |     5     6     |    7   8  | 9 10 11 12 13 14 | 15 16 17 18 |   19  20  |   21  | 22 23 24 
@@ -450,12 +567,13 @@ Note: During the first run, this message MUST display each ghost correctly.
 
 FOREIGN_PACMAN_ATE_GHOST
 ------------------------
+
 FOREIGN_PACMAN_ATE_GHOST messages consist of 7 bits, encoded as follows:
 
- 0 1 2 3 |    4    |      5    6    |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-| Type  | Priority |   Ghost Number | 
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ 0 1 2 3 |    4    |  5    6    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| Type  | Priority |   GhostNum | 
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 Fields:
     - Type: 4 bit type field. Type=FOREIGN_PACMAN_ATE_GHOST has decimal value 7
@@ -471,6 +589,7 @@ The contents of a FOREIGN_PACMAN_ATE_GHOST message are:
 
 EAT
 ---
+
 EAT messages consist of 21 bits, encoded as follows:
 
  0 1 2 3 |     4   |      5     6    | 7 8 9 10 11 12 | 13 14 15 16 |   17   18 |   19   20   |
@@ -493,22 +612,25 @@ The contents of a EAT message are:
 - Quadrant Number: Ranges from 0 - 3. see 1.3
 - X-Position: A hexadecimal from 0-2A see 1.5
 - Y-Position: A hexadecimal from 0-F see 1.5
-- IsForeign: Decimal value that is either 0 or 1. 0 if the food was on local machine or 1 if the food was on remote machine
-- IsPowerpill: Decimal value that is either 0 or 1. 0 if the food is not a powerpill or 1 if the food is a powerpill.
+- IsForeign: Decimal value that is either 0 or 1. 0 if the food was on
+             local machine or 1 if the food was on remote machine
+- IsPowerpill: Decimal value that is either 0 or 1. 0 if the food is not
+             a powerpill or 1 if the food is a powerpill.
 
 SCORE_UPDATE
 ------------
+
 SCORE_UPDATE messages consist of 21 bits, encoded as follows:
 
- 0 1 2 3 |    4    | 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-| Type  | Priority |                   Score                    | 
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ 0 1 2 3 |    4    | 5 6 7 8 9 10 11 12 13 14 15 |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| Type  | Priority  |           Score             | 
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 Fields:
     - Type: 4 bit type field. Type=SCORE_UPDATE has decimal value 9
     - Priority: Priority Type 1 bit unsigned integer
-    - Score: 16 bit binary value.
+    - Score: 10 bit unsigned integer.
 
 The contents of a SCORE_UPDATE message are:
 - Type: SCORE_UPDATE
@@ -517,6 +639,7 @@ The contents of a SCORE_UPDATE message are:
 
 LIVES_UPDATE
 ------------
+
 LIVES_UPDATE messages consist of 8 bits, encoded as follows:
 
  0 1 2 3 |     4    | 5 6 7 |
@@ -532,10 +655,12 @@ Fields:
 The contents of a LIVES_UPDATE message are:
 - Type: LIVES_UPDATE
 - Priority: This value MUST be 0. see 1.2.1
-- Lives: Decimal value in range 0-4. Represents the number of lives of the local player
+- Lives: Decimal value in range 0-4. Represents the number of lives
+         of the local player
 
 STATUS_UPDATE
 -------------
+
 STATUS_UPDATE messages consist of 8 bits, encoded as follows:
 
  0 1 2 3 |    4    |  5 6 7 |
@@ -544,13 +669,14 @@ STATUS_UPDATE messages consist of 8 bits, encoded as follows:
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 Fields:
-    - Type: 4 bit type field. Type=LIVES_UPDATE has decimal value 10
+    - Type: 4 bit type field. Type=LIVES_UPDATE has decimal value 11
     - Priority: Priority Type 1 bit unsigned integer
     - Status: 3 bit binary value
 The contents of a STATUS_UPDATE message are:
 - Type: STATUS_UPDATE
 - Priority: This value MUST be 0. see 1.2.1
-- Status: There are 5 status'. They will be represented in decimal and will have binary encoding.
+- Status: There are 5 status'. They will be represented in decimal and 
+          will have binary encoding.
 
      Status        |  Decimal Value |   Binary Value
      STARTUP       |       0        |       000
@@ -561,12 +687,57 @@ The contents of a STATUS_UPDATE message are:
   READY_TO_RESTART |       5        |       101
 
 
-4.0 Message Timing
+5.0 Message Timing
 ==================
 
-While the Pacman is moving, the message types relating to the maze and the pacman
-should be sent every 20ms. If the computer cannot maintain 50 frames per second, the messages
-MAY be sent once per frame.
+While the Pacman is moving, the message types relating to the maze 
+and the pacman should be sent every 20ms. If the computer cannot 
+maintain 50 frames per second, the messages MAY be sent once per frame.
+Messages initiating a connection should be sent at the start and MUST 
+be sent every 10ms until a connection is successful.
+
+
+6.0 ABNF Grammar
+=================
+
+INITIALISE =                 Notification | Quadrant Number | Map item | Runs | X-Position | Y-Position 
+FOREIGN_PACMAN_ARRIVED =     Notification 
+FOREIGN_PACMAN_LEFT =        Notification 
+FOREIGN_PACMAN_DIED =        Notification 
+PACMAN_GO_HOME =             Notification 
+PACMAN_UPDATE =              Notification | Quadrant Number | Coordinate | DirSpeed
+GHOST_UPDATE =               Notification | Quadrant Number | GhostNum | Coordinate | DirSpeed | Mode
+FOREIGN_PACMAN_ATE_GHOST =   Notification | GhostNum
+EAT =                        Notification | Quadrant Number | Coordinate | IsForeign | IsPowerpill
+SCORE_UPDATE =               Notification | Score
+LIVES_UPDATE =               Notification | Lives
+STATUS_UPDATE =              Notification | Status
+Notification =               Sequence Number | Type | Priority
+Coordinate =                 X-Position | Y-Position
+DirSpeed =                   Direction | Speed
+IsForeign =                  2 bit int
+IsPowerpill =                2 bit int
+Sequence Number =            4 bit int
+Type =                       digit | 10 | 11 | 12 | 13
+Priority =                   2 bit int
+Quadrant Number =            4 bit int
+Map item =                   digit | 10 | 11 
+Runs =                       digit | digit
+X-Position =                 hex_digit
+Y-Position =                 hex_digit | hex_digit
+Direction =                  4 bit int
+Speed =                      2 bit int
+GhostNum =                   4 bit int
+GhostModes =                 3 bit int
+Score =                      digit | digit | digit
+Lives =                      4 bit int | 4
+Status =                     4 bit int | 4 | 5
+2 bit int =                  0 | 1
+3 bit int =                  2 bit int | 2
+4 bit int =                  3 bit int | 3
+hex_digit =                  digit | A | B | C | D | E | F
+digit =                      0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+
 
 
 
