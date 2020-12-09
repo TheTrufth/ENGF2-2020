@@ -1,8 +1,6 @@
 Pacman v1 Protocol Specification
 =================================
 
-*giving unsigned integer
-
 Table of Contents
 =================
 
@@ -29,11 +27,8 @@ Table of Contents
 6.0 ABNF Grammar
 
 
-
-
 1. Terminology
 ===============
-
 
 This specification uses the terms MUST, SHOULD and MAY as defined in 
 RFC 2119 [rfc2119]
@@ -79,7 +74,7 @@ correctly received by the other side.
   ===========================================
 
   In order to determine a messages priority level, there are conditions 
-  that must be met. These are outlined below:
+  that MUST be met. These are outlined below:
 
   Priority level :         Condition            :   Protocol used
         0        : This message MUST be sent    :       TCP
@@ -302,7 +297,7 @@ used at a time.
   2.1 Client server mode
   ======================
 
-  The server must run first, and then the client connects to the 
+  The server MUST run first, and then the client connects to the 
   server. 
   To run the server:
   "python3 pacman.py -r -s -p <passwd>"
@@ -406,7 +401,7 @@ The contents of the initialise message are:
                   delievered reliably. see 1.1.1
 - Quadrant Number: Integer in range 0 to 3 where 0 is the top left.
 - Map Item: Decimal value indicating which map item. see 1.3
-- Runs: Decimal value indicating how much of the map item it should add on 
+- Runs: Decimal value indicating how much of the map item it SHOULD add on 
         that line. see 1.3.1
 - X-Position: Contains the items x position value in hexadecimal. 
               It is of the format 0x(__)
@@ -690,11 +685,14 @@ The contents of a STATUS_UPDATE message are:
 5.0 Message Timing
 ==================
 
-While the Pacman is moving, the message types relating to the maze 
-and the pacman should be sent every 20ms. If the computer cannot 
-maintain 50 frames per second, the messages MAY be sent once per frame.
-Messages initiating a connection should be sent at the start and MUST 
-be sent every 10ms until a connection is successful.
+While the Pacman is moving, PACMAN_UPDATE messages MUST be 
+sent every 20ms. If the computer cannot maintain 50 frames per second, 
+the messages MAY be sent once per frame. Messages initiating a connection 
+SHOULD be sent at the start and MUST be sent every 5ms until a connection 
+is successful.
+
+Messages relating to score are only sent if a EAT message is sent.
+LIVES_UPDATE message is only sent when FOREIGN_PACMAN_DIED is sent.
 
 
 6.0 ABNF Grammar
